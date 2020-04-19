@@ -58,18 +58,21 @@ def parse(args):
 
 def parse_default(tree):
 
-    number_block_1 = tree.xpath(
-        '/html/body/div[3]/div[3]/div[4]/div/div[4]/h3[1]/span/text()')
-    text_block_1 = tree.xpath(
-        '//*[@id="mw-content-text"]/div/div[4]/p[3]/text()')
+    number_block_offset = 0
+    text_block_offset = 2
 
-    number_block_2 = tree.xpath('//*[@id="mw-content-text"]/div/div[4]/h3[2]')
-    text_block_2 = tree.xpath(
-        '//*[@id="mw-content-text"]/div/div[4]/p[4]/text()')
-    # print(number_block_1[0], text_block_1[0])
+    TOTAL_NUM = 504
+    for n in range(1, TOTAL_NUM + 1):
+        number_block_idx = n + number_block_offset
+        text_block_idx = n + text_block_offset
 
-    m1 = MaximeItem(number_block_1[0], text_block_1[0])
-    return [m1]
+        parsed_number = tree.xpath(
+            f'//*[@id="mw-content-text"]/div/div[4]/h3[{number_block_idx}]/span/text()')[0]
+        parsed_text = tree.xpath(
+            f'//*[@id="mw-content-text"]/div/div[4]/p[{text_block_idx}]/text()'
+        )[0]
+        m = MaximeItem(parsed_number, parsed_text)
+        yield m
 
 
 def parse_posthumes(tree):
