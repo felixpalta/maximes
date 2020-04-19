@@ -24,7 +24,7 @@ def error(reason):
 
 def maximes_to_dict(maxim_type, maximes):
     res = {}
-    res['type'] = maxim_type
+    res['source'] = maxim_type
     res['maximes'] = []
     for m in maximes:
         res['maximes'].append(dataclasses.asdict(m))
@@ -77,7 +77,7 @@ def parse_default(tree):
         parsed_text = tree.xpath(
             f'//*[@id="mw-content-text"]/div/div[4]/p[{text_block_idx}]/text()'
         )[0]
-        m = MaximeItem(parsed_number, parsed_text)
+        m = MaximeItem(int(parsed_number), parsed_text)
         yield m
 
 
