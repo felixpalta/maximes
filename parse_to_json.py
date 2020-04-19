@@ -58,17 +58,17 @@ def do_work(args):
         maximes = parse_common(tree, parser_xpath_generator())
 
     maximes_dict = maximes_to_dict(maxim_type, maximes)
-    maximes_json = json.dumps(maximes_dict, ensure_ascii=use_ascii)
     if dry_run:
+        maximes_json = json.dumps(maximes_dict, ensure_ascii=use_ascii)
         print(maximes_json)
     else:
-        store_to_file(maximes_json, out_file_prefix)
+        store_to_file(maximes_dict, out_file_prefix, use_ascii)
 
 
-def store_to_file(maximes_json, out_file_prefix):
+def store_to_file(maximes_dict, out_file_prefix, use_ascii):
     out_file_name = out_file_prefix + '.json'
     with open(out_file_name, 'w', encoding='utf8') as out_file:
-        out_file.write(maximes_json)
+        json.dump(maximes_dict, out_file, ensure_ascii=use_ascii)
 
 
 def parse_common(tree, xpath_generator):
