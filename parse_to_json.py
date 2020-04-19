@@ -62,14 +62,10 @@ def store_to_file(maximes_json, out_file_prefix):
         out_file.write(maximes_json)
 
 
-def parse_common(tree, idx_generator):
-    number_block_template = '//*[@id="mw-content-text"]/div/div[4]/h3[{}]/span/text()'
-    text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
+def parse_common(tree, xpath_generator):
     n = 0
-    for number_block_idx, text_block_idx in idx_generator:
+    for number_block_path, text_block_path in xpath_generator:
         n += 1
-        number_block_path = number_block_template.format(number_block_idx)
-        text_block_path = text_block_template.format(text_block_idx)
         parsed_number = int(tree.xpath(number_block_path)[0])
 
         if parsed_number != n:
@@ -82,19 +78,31 @@ def parse_common(tree, idx_generator):
 
 
 def parse_default(tree):
-    def idx_generator_default():
+    def xpath_generator_default():
+        number_block_template = '//*[@id="{}"]/text()'
+        text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
         for i in range(1, 505):
-            number_block_idx = i
-            text_block_idx = i+2
-            yield (number_block_idx, text_block_idx)
-    yield from parse_common(tree, idx_generator_default())
+            number_block_path = number_block_template.format(i)
+            text_block_path = text_block_template.format(i + 2)
+            yield number_block_path, text_block_path
+    yield from parse_common(tree, xpath_generator_default())
 
 
 def parse_supprimees(tree):
     def idx_generator_supprimees():
-        for i in range(1, 75):
-            number_block_idx = 505 + i
-            text_block_idx = 509 + i
+        k = 0  # ordinal number
+        count = 0  # actual loop index
+
+        while True:
+            k += 1
+            # skip some elements during parsing
+            if k in (61, 62):
+                continue
+            count += 1
+            if count > 74:
+                break
+            number_block_idx = 505 + k
+            text_block_idx = 509 + k
             yield (number_block_idx, text_block_idx)
     yield from parse_common(tree, idx_generator_supprimees())
 
