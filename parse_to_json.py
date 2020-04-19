@@ -89,22 +89,22 @@ def parse_default(tree):
 
 
 def parse_supprimees(tree):
-    def idx_generator_supprimees():
-        k = 0  # ordinal number
-        count = 0  # actual loop index
+    def xpath_generator_supprimees():
+        number_block_template = '//*[@id="{}_2"]/text()'
+        text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
 
-        while True:
-            k += 1
-            # skip some elements during parsing
-            if k in (61, 62):
-                continue
-            count += 1
-            if count > 74:
-                break
-            number_block_idx = 505 + k
-            text_block_idx = 509 + k
-            yield (number_block_idx, text_block_idx)
-    yield from parse_common(tree, idx_generator_supprimees())
+        def text_index(i):
+            if i < 61:
+                return 509 + i
+            if i < 62:
+                return 511 + i
+            return 513 + i
+
+        for i in range(1, 75):
+            number_block_path = number_block_template.format(i)
+            text_block_path = text_block_template.format(text_index(i))
+            yield number_block_path, text_block_path
+    yield from parse_common(tree, xpath_generator_supprimees())
 
 
 def parse_posthumes(tree):
