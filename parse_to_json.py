@@ -39,9 +39,9 @@ def parse(args):
 
     type_data = PARSER_MAP[maxim_type]
     parser = type_data[0]
-    out_file_name = type_data[1]
+    out_file_prefix = type_data[1]
     if use_ascii:
-        out_file_name += '_ascii'
+        out_file_prefix += '_ascii'
 
     with open(html_file_name, encoding='utf8') as input_html:
         tree = html.fromstring(input_html.read())
@@ -53,7 +53,13 @@ def parse(args):
     if dry_run:
         print(maximes_json)
     else:
-        pass
+        store_to_file(maximes_json, out_file_prefix)
+
+
+def store_to_file(maximes_json, out_file_prefix):
+    out_file_name = out_file_prefix + '.json'
+    with open(out_file_name, 'w', encoding='utf8') as out_file:
+        out_file.write(maximes_json)
 
 
 def parse_default(tree):
