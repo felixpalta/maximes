@@ -108,7 +108,26 @@ def parse_supprimees(tree):
 
 
 def parse_posthumes(tree):
-    pass
+    def xpath_generator_posthumes():
+        number_block_template = '//*[@id="{}_3"]/text()'
+        text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
+
+        def text_index(i):
+            if i < 27:
+                return 590 + i
+            if i < 32:
+                return 592 + i
+            if i < 35:
+                return 594 + i
+            if i < 59:
+                return 596 + i
+            return 598 + i
+
+        for i in range(1, 62):
+            number_block_path = number_block_template.format(i)
+            text_block_path = text_block_template.format(text_index(i))
+            yield number_block_path, text_block_path
+    yield from parse_common(tree, xpath_generator_posthumes())
 
 
 PARSER_MAP = {
