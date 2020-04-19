@@ -62,7 +62,9 @@ def store_to_file(maximes_json, out_file_prefix):
         out_file.write(maximes_json)
 
 
-def parse_common(tree, total_num, number_block_offset, text_block_offset, number_block_template, text_block_template):
+def parse_common(tree, total_num, number_block_offset, text_block_offset):
+    number_block_template = '//*[@id="mw-content-text"]/div/div[4]/h3[{}]/span/text()'
+    text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
     for n in range(1, total_num + 1):
         number_block_idx = n + number_block_offset
         text_block_idx = n + text_block_offset
@@ -87,17 +89,20 @@ def parse_default(tree):
     text_block_offset = 2
 
     TOTAL_NUM = 504
-    number_block_template = '//*[@id="mw-content-text"]/div/div[4]/h3[{}]/span/text()'
-    text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
 
-    yield from parse_common(tree, TOTAL_NUM, number_block_offset, text_block_offset, number_block_template, text_block_template)
-
-
-def parse_posthumes(tree):
-    pass
+    yield from parse_common(tree, TOTAL_NUM, number_block_offset, text_block_offset)
 
 
 def parse_supprimees(tree):
+    number_block_offset = 505
+    text_block_offset = 509
+
+    TOTAL_NUM = 74
+
+    yield from parse_common(tree, TOTAL_NUM, number_block_offset, text_block_offset)
+
+
+def parse_posthumes(tree):
     pass
 
 
