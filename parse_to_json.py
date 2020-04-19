@@ -38,15 +38,14 @@ def do_work(args):
     dry_run = args.dry_run
 
     type_data = PARSER_MAP[maxim_type]
-    parser = type_data[0]
+    parser_xpath_generator = type_data[0]
     out_file_prefix = type_data[1]
     if use_ascii:
         out_file_prefix += '_ascii'
 
     with open(html_file_name, encoding='utf8') as input_html:
         tree = html.fromstring(input_html.read())
-        maximes = parser(tree)
-
+        maximes = parse_common(tree, parser_xpath_generator())
     maximes_json = json.dumps(maximes_to_dict(
         maxim_type, maximes), ensure_ascii=use_ascii)
 
@@ -77,63 +76,57 @@ def parse_common(tree, xpath_generator):
         yield m
 
 
-def parse_default(tree):
-    def xpath_generator_default():
-        number_block_template = '//*[@id="{}"]/text()'
-        text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
-        for i in range(1, 505):
-            number_block_path = number_block_template.format(i)
-            text_block_path = text_block_template.format(i + 2)
-            yield number_block_path, text_block_path
-    yield from parse_common(tree, xpath_generator_default())
+def xpath_generator_default():
+    number_block_template = '//*[@id="{}"]/text()'
+    text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
+    for i in range(1, 505):
+        number_block_path = number_block_template.format(i)
+        text_block_path = text_block_template.format(i + 2)
+        yield number_block_path, text_block_path
 
 
-def parse_supprimees(tree):
-    def xpath_generator_supprimees():
-        number_block_template = '//*[@id="{}_2"]/text()'
-        text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
+def xpath_generator_supprimees():
+    number_block_template = '//*[@id="{}_2"]/text()'
+    text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
 
-        def text_index(i):
-            if i < 61:
-                return 509 + i
-            if i < 62:
-                return 511 + i
-            return 513 + i
+    def text_index(i):
+        if i < 61:
+            return 509 + i
+        if i < 62:
+            return 511 + i
+        return 513 + i
 
-        for i in range(1, 75):
-            number_block_path = number_block_template.format(i)
-            text_block_path = text_block_template.format(text_index(i))
-            yield number_block_path, text_block_path
-    yield from parse_common(tree, xpath_generator_supprimees())
+    for i in range(1, 75):
+        number_block_path = number_block_template.format(i)
+        text_block_path = text_block_template.format(text_index(i))
+        yield number_block_path, text_block_path
 
 
-def parse_posthumes(tree):
-    def xpath_generator_posthumes():
-        number_block_template = '//*[@id="{}_3"]/text()'
-        text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
+def xpath_generator_posthumes():
+    number_block_template = '//*[@id="{}_3"]/text()'
+    text_block_template = '//*[@id="mw-content-text"]/div/div[4]/p[{}]/text()'
 
-        def text_index(i):
-            if i < 27:
-                return 590 + i
-            if i < 32:
-                return 592 + i
-            if i < 35:
-                return 594 + i
-            if i < 59:
-                return 596 + i
-            return 598 + i
+    def text_index(i):
+        if i < 27:
+            return 590 + i
+        if i < 32:
+            return 592 + i
+        if i < 35:
+            return 594 + i
+        if i < 59:
+            return 596 + i
+        return 598 + i
 
-        for i in range(1, 62):
-            number_block_path = number_block_template.format(i)
-            text_block_path = text_block_template.format(text_index(i))
-            yield number_block_path, text_block_path
-    yield from parse_common(tree, xpath_generator_posthumes())
+    for i in range(1, 62):
+        number_block_path = number_block_template.format(i)
+        text_block_path = text_block_template.format(text_index(i))
+        yield number_block_path, text_block_path
 
 
 PARSER_MAP = {
-    TYPE_DEFAULT: (parse_default, 'maximes'),
-    TYPE_POSTHUMES: (parse_posthumes, 'maximes_posthumes'),
-    TYPE_SUPPRIMEES: (parse_supprimees, 'maximes_supprimees')
+    TYPE_DEFAULT: (xpath_generator_default, 'maximes'),
+    TYPE_POSTHUMES: (xpath_generator_posthumes, 'maximes_posthumes'),
+    TYPE_SUPPRIMEES: (xpath_generator_supprimees, 'maximes_supprimees')
 
 
 }
