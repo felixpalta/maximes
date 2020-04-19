@@ -2,7 +2,7 @@ from sys import argv
 from lxml import html
 import dataclasses
 import argparse
-import json
+import simplejson as json
 
 """
 This script parses HTML-file, obtained by retrieve.py.
@@ -32,12 +32,18 @@ def error(reason):
     exit(1)
 
 
-def maximes_to_dict(maxim_type, maximes):
+def maximes_to_dict(maxim_type, maximes, as_list=True):
     res = {}
     res['source'] = maxim_type
-    res['maximes'] = []
-    for m in maximes:
-        res['maximes'].append(dataclasses.asdict(m))
+    if as_list:
+        res['maximes'] = []
+        for m in maximes:
+            res['maximes'].append(dataclasses.asdict(m))
+    else:
+        def gen():
+            for m in maximes:
+                yield dataclasses.asdict(m)
+        res['maximes'] = gen()
     return res
 
 
@@ -55,20 +61,22 @@ def do_work(args):
 
     with open(html_file_name, encoding='utf8') as input_html:
         tree = html.fromstring(input_html.read())
-        maximes = parse_common(tree, parser_xpath_generator())
+    maximes = parse_common(tree, parser_xpath_generator())
 
-    maximes_dict = maximes_to_dict(maxim_type, maximes)
     if dry_run:
+        maximes_dict = maximes_to_dict(maxim_type, maximes, as_list=True)
         maximes_json = json.dumps(maximes_dict, ensure_ascii=use_ascii)
         print(maximes_json)
     else:
-        store_to_file(maximes_dict, out_file_prefix, use_ascii)
+        maximes_dict_gen = maximes_to_dict(maxim_type, maximes, as_list=False)
+        store_to_file(maximes_dict_gen, out_file_prefix, use_ascii)
 
 
 def store_to_file(maximes_dict, out_file_prefix, use_ascii):
     out_file_name = out_file_prefix + '.json'
     with open(out_file_name, 'w', encoding='utf8') as out_file:
-        json.dump(maximes_dict, out_file, ensure_ascii=use_ascii)
+        json.dump(maximes_dict, out_file, ensure_ascii=use_ascii,
+                  iterable_as_array=True)
 
 
 def parse_common(tree, xpath_generator):
