@@ -70,9 +70,14 @@ def parse_common(tree, total_num, number_block_offset, text_block_offset, number
         number_block_path = number_block_template.format(number_block_idx)
         text_block_path = text_block_template.format(text_block_idx)
 
-        parsed_number = tree.xpath(number_block_path)[0]
+        parsed_number = int(tree.xpath(number_block_path)[0])
+
+        if parsed_number != n:
+            raise Exception(
+                f'parsed number {parsed_number} does not match loop index {n}')
+
         parsed_text = tree.xpath(text_block_path)[0]
-        m = MaximeItem(int(parsed_number), parsed_text)
+        m = MaximeItem(parsed_number, parsed_text)
         yield m
 
 
