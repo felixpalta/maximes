@@ -2,9 +2,19 @@ from sys import argv
 from lxml import html
 import dataclasses
 import argparse
-
-
 import json
+
+"""
+This script parses HTML-file, obtained by retrieve.py.
+This is a list of "Maximes" by La Rochefoucauld.
+There are 3 types of maximes on that page:
+- main list (default)
+- posthumes
+- supprimees
+Each Maxime has its own ordinal number, that must be preserved.
+
+The goal is to parse each list of maximes and put in a JSON file.
+"""
 
 TYPE_DEFAULT = 'default'
 TYPE_POSTHUMES = 'posthumes'
@@ -46,9 +56,9 @@ def do_work(args):
     with open(html_file_name, encoding='utf8') as input_html:
         tree = html.fromstring(input_html.read())
         maximes = parse_common(tree, parser_xpath_generator())
-    maximes_json = json.dumps(maximes_to_dict(
-        maxim_type, maximes), ensure_ascii=use_ascii)
 
+    maximes_dict = maximes_to_dict(maxim_type, maximes)
+    maximes_json = json.dumps(maximes_dict, ensure_ascii=use_ascii)
     if dry_run:
         print(maximes_json)
     else:
@@ -124,11 +134,11 @@ def xpath_generator_posthumes():
 
 
 PARSER_MAP = {
+    # 0 -> xpath generator
+    # 1 -> output file prefix
     TYPE_DEFAULT: (xpath_generator_default, 'maximes'),
     TYPE_POSTHUMES: (xpath_generator_posthumes, 'maximes_posthumes'),
     TYPE_SUPPRIMEES: (xpath_generator_supprimees, 'maximes_supprimees')
-
-
 }
 ########################################################################
 
