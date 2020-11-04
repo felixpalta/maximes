@@ -4,7 +4,8 @@ import json
 import requests
 import time
 
-BLOG_ID = '185133231'
+BLOG_ID = ''
+TOKEN = ''
 
 API_BASE = 'https://public-api.wordpress.com/rest/v1.1'
 
@@ -15,7 +16,7 @@ CATEGORY_POSTHUMES = 'posthumes'
 
 def get_category(category_str):
     return {
-        'default': CATEGORY_DEFAULT, 'posthumes': CATEGORY_POSTHUMES, 'supprimees': CATEGORY_POSTHUMES
+        'default': CATEGORY_DEFAULT, 'posthumes': CATEGORY_POSTHUMES, 'supprimees': CATEGORY_SUPPRIMEES
     }[category_str]
 
 
@@ -39,20 +40,21 @@ def make_site_route(site_route):
     return f'{API_BASE}/sites/{BLOG_ID}/{site_route}'
 
 
-def get_token(authfile: str):
+def set_auth_data(authfile: str):
+    global TOKEN
+    global BLOG_ID
     with open(authfile) as f:
         data = json.load(f)
-        return data['access_token']
+        TOKEN = data['access_token']
+        BLOG_ID = data['blog_id']
 
 
 def make_auth_headers(token: str):
     return {'Authorization': f'BEARER {token}'}
 
 
-def rq(method: str, url, token, params=None, data=None):
-    headers = make_auth_headers(token)
-    # print(url)
-    # print(headers)
+def rq(method: str, url, params=None, data=None):
+    headers = make_auth_headers(TOKEN)
     if method == 'GET':
         return requests.get(url, params=params, headers=headers)
     if method == 'POST':
@@ -60,22 +62,29 @@ def rq(method: str, url, token, params=None, data=None):
         return requests.post(url, params=params, headers=headers, data=json.dumps(data).encode('utf-8'))
 
 
-def make_post(token, title, content, slug, category=CATEGORY_DEFAULT):
+def make_post(title, content, slug, category=CATEGORY_DEFAULT):
     url = make_site_route('posts/new')
     data = {'title': title, 'content': content,
             'slug': slug, 'categories': [category], 'likes_enabled': False, 'sharing_enabled': False}
-    resp = rq('POST', url, token, data=data)
+    resp = rq('POST', url, data=data)
     resp.raise_for_status()
     return resp
 
 
-def post_maxim(one_maxim, token, category_str):
+def delete_posts(ids):
+    url = make_site_route('posts/delete')
+    data = {'post_ids': [str(i) for i in ids]}
+    resp = rq('POST', url, data=data)
+    resp.raise_for_status()
+    return resp
+
+
+def post_maxim(one_maxim, category_str):
     id = one_maxim['idx']
     text = one_maxim['text']
     print(id, text)
 
     resp = make_post(
-        token,
         title=get_title(category_str, id),
         content=text,
         slug=get_slug(category_str, id),
@@ -88,13 +97,32 @@ def post_maxim(one_maxim, token, category_str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--authfile')
-    parser.add_argument('--maximes', required=True)
-    parser.add_argument('--source', required=True,
+    parser.add_argument('--authfile', required=True)
+    parser.add_argument('--maximes')
+    parser.add_argument('--source',
                         choices=('default', 'posthumes', 'supprimees'))
+    parser.add_argument('--delete', nargs='+', type=int)
+    parser.add_argument('--delete-range', nargs='+', type=int)
+
     args = parser.parse_args()
+
     print(args)
-    token = get_token(args.authfile)
+    set_auth_data(args.authfile)
+
+    if args.delete:
+        resp = delete_posts(args.delete)
+        print(resp.status_code, resp.json())
+        return
+
+    if args.delete_range:
+        if len(args.delete_range) != 2:
+            raise Exception('Delete range must have 2 values')
+        delete_from = args.delete_range[0]
+        delete_to = args.delete_range[1]
+        rng = range(delete_from, delete_to + 1)
+        resp = delete_posts(rng)
+        print(resp.status_code, resp.json())
+        return
 
     with open(args.maximes, encoding='utf-8') as maximes_file:
         maximes_json = json.load(maximes_file)
@@ -105,7 +133,7 @@ def main():
 
     count = 0
     for one_maxim in maximes_json['maximes']:
-        post_maxim(one_maxim, token, category_str)
+        post_maxim(one_maxim, category_str)
         count += 1
         if count % 20 == 0:
             print('sleeping...')
