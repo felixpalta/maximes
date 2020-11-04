@@ -132,12 +132,11 @@ def main():
     category_str = args.source
 
     count = 0
-    for one_maxim in maximes_json['maximes']:
+    maximes_list = maximes_json['maximes']
+    for one_maxim in reversed(maximes_list):
         post_maxim(one_maxim, category_str)
         count += 1
-        if count % 20 == 0:
-            print('sleeping...')
-            time.sleep(10)
+        time.sleep(1)
 
     print(f'{count} uploaded')
 
