@@ -2,14 +2,15 @@
 import argparse
 import json
 import requests
+import time
 
 BLOG_ID = '185133231'
 
 API_BASE = 'https://public-api.wordpress.com/rest/v1.1'
 
-CATEGORY_DEFAULT = 'reflexions-morales'
-CATEGORY_SUPPRIMEES = 'maximes-supprimees'
-CATEGORY_POSTHUMES = 'maximes-posthumes'
+CATEGORY_DEFAULT = 'maximes'
+CATEGORY_SUPPRIMEES = 'supprimees'
+CATEGORY_POSTHUMES = 'posthumes'
 
 
 def get_category(category_str):
@@ -55,7 +56,8 @@ def rq(method: str, url, token, params=None, data=None):
     if method == 'GET':
         return requests.get(url, params=params, headers=headers)
     if method == 'POST':
-        return requests.post(url, params=params, headers=headers, data=data)
+        headers['Content-Type'] = 'application/json; charset=utf8'
+        return requests.post(url, params=params, headers=headers, data=json.dumps(data).encode('utf-8'))
 
 
 def make_post(token, title, content, slug, category=CATEGORY_DEFAULT):
@@ -70,6 +72,8 @@ def make_post(token, title, content, slug, category=CATEGORY_DEFAULT):
 def post_maxim(one_maxim, token, category_str):
     id = one_maxim['idx']
     text = one_maxim['text']
+    print(id, text)
+
     resp = make_post(
         token,
         title=get_title(category_str, id),
@@ -78,6 +82,8 @@ def post_maxim(one_maxim, token, category_str):
         category=get_category(category_str)
     )
     print(resp.status_code)
+    resp_body = resp.json()
+    print(resp_body['ID'])
 
 
 def main():
@@ -90,14 +96,22 @@ def main():
     print(args)
     token = get_token(args.authfile)
 
-    with open(args.maximes) as maximes_file:
+    with open(args.maximes, encoding='utf-8') as maximes_file:
         maximes_json = json.load(maximes_file)
 
     assert maximes_json['source'] == args.source
     print(f'file opened {args.maximes}, type {args.source}')
     category_str = args.source
 
-    post_maxim(maximes_json['maximes'][0], token, category_str)
+    count = 0
+    for one_maxim in maximes_json['maximes']:
+        post_maxim(one_maxim, token, category_str)
+        count += 1
+        if count % 20 == 0:
+            print('sleeping...')
+            time.sleep(10)
+
+    print(f'{count} uploaded')
 
 
 main()
